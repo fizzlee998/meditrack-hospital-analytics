@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediTrack Nigeria — Hospital Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#f0f4f8;--bg2:#e2e8f2;--card:#ffffff;
+  --border:#dde5f0;--border2:#c8d4e8;
+  --text:#1a2744;--text2:#4a5a7a;--text3:#8a9ab8;
+  --teal:#0d7c72;--teal-l:#e0f5f2;--teal-d:#095c54;
+  --blue:#1d3a8a;--blue-l:#e8eefa;
+  --red:#b81c1c;--red-l:#fde8e8;
+  --amber:#b86010;--amber-l:#fdf0e0;
+  --green:#166a3c;--green-l:#e4f5ec;
+  --purple:#5a2888;--purple-l:#f2e8fa;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:var(--teal-d);padding:0 32px;height:66px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:14px}
+.logo-icon{width:40px;height:40px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:12px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:22px;height:22px;fill:none;stroke:white;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.logo-name{font-family:'Lora',serif;font-size:18px;color:white;font-weight:600}
+.logo-tag{font-size:11px;color:rgba(255,255,255,0.45);font-weight:300;margin-top:1px;letter-spacing:0.03em}
+.hbadge{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.65);font-size:11px;padding:5px 14px;border-radius:20px}
+.header-right{display:flex;gap:10px;align-items:center}
+.pulse{width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.main{padding:26px 32px;max-width:1400px;margin:0 auto}
+.sec{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec::after{content:'';flex:1;height:1px;background:var(--border)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.kpi.teal::before{background:var(--teal)}
+.kpi.green::before{background:var(--green)}
+.kpi.amber::before{background:var(--amber)}
+.kpi.red::before{background:var(--red)}
+.kpi-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;font-weight:500}
+.kpi-val{font-family:'Lora',serif;font-size:30px;color:var(--text);line-height:1;margin-bottom:6px}
+.kpi-sub{font-size:12px;color:var(--text2);font-weight:300}
+.kpi-badge{display:inline-flex;font-size:11px;padding:3px 9px;border-radius:6px;margin-top:8px;font-weight:500}
+.bg{background:var(--green-l);color:var(--green)}
+.br{background:var(--red-l);color:var(--red)}
+.ba{background:var(--amber-l);color:var(--amber)}
+.bb{background:var(--blue-l);color:var(--blue)}
+.bt{background:var(--teal-l);color:var(--teal)}
+.row2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:26px}
+.row-half{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:26px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:26px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
+.card-title{font-family:'Lora',serif;font-size:15px;color:var(--text);margin-bottom:4px}
+.card-sub{font-size:12px;color:var(--text3);margin-bottom:16px;font-weight:300;line-height:1.5}
+.finding{border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:12.5px;line-height:1.65;border-left:3px solid}
+.ft{background:var(--teal-l);border-color:var(--teal);color:var(--teal-d)}
+.fr{background:var(--red-l);border-color:var(--red);color:var(--red)}
+.fa{background:var(--amber-l);border-color:var(--amber);color:var(--amber)}
+.fg{background:var(--green-l);border-color:var(--green);color:var(--green)}
+.fb{background:var(--blue-l);border-color:var(--blue);color:var(--blue)}
+.fp{background:var(--purple-l);border-color:var(--purple);color:var(--purple)}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{color:var(--text3);font-weight:500;padding:8px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.tbl tr:last-child td{border:none}
+.pill{display:inline-flex;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.p-teal{background:var(--teal-l);color:var(--teal)}
+.p-blue{background:var(--blue-l);color:var(--blue)}
+.p-red{background:var(--red-l);color:var(--red)}
+.p-amber{background:var(--amber-l);color:var(--amber)}
+.p-green{background:var(--green-l);color:var(--green)}
+.p-purple{background:var(--purple-l);color:var(--purple)}
+.p-gray{background:var(--bg2);color:var(--text3)}
+.rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px}
+.rec{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px}
+.rec-num{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.rec-title{font-family:'Lora',serif;font-size:14px;color:var(--text);margin-bottom:6px;line-height:1.4}
+.rec-body{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px}
+.rec-action{font-size:11.5px;color:var(--teal);font-weight:500;border-top:1px solid var(--border);padding-top:10px}
+footer{border-top:1px solid var(--border);padding:20px 32px;display:flex;justify-content:space-between}
+.ft2{font-size:12px;color:var(--text3)}
+@media(max-width:900px){.kpi-grid,.row2,.row-half,.row3,.rec-grid{grid-template-columns:1fr}.main{padding:14px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    </div>
+    <div>
+      <div class="logo-name">MediTrack Nigeria</div>
+      <div class="logo-tag">Hospital Analytics Dashboard — Jul 2023 to Jun 2024</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="pulse"></div>
+    <div class="hbadge">25,000 Patients</div>
+    <div class="hbadge">₦796.3M Revenue</div>
+  </div>
+</header>
+
+<div class="main">
+
+<div class="sec">Key metrics</div>
+<div class="kpi-grid">
+  <div class="kpi teal"><div class="kpi-lbl">Total Patients</div><div class="kpi-val">25,000</div><div class="kpi-sub">Jul 2023 – Jun 2024</div><div class="kpi-badge bt">10 departments</div></div>
+  <div class="kpi green"><div class="kpi-lbl">Total Revenue</div><div class="kpi-val">₦796.3M</div><div class="kpi-sub">43,893 billing records</div><div class="kpi-badge bg">Avg ₦18,142 / bill</div></div>
+  <div class="kpi amber"><div class="kpi-lbl">No-Show Rate</div><div class="kpi-val">19.7%</div><div class="kpi-sub">12,237 missed appointments</div><div class="kpi-badge ba">Target: below 15%</div></div>
+  <div class="kpi red"><div class="kpi-lbl">Active Patient Rate</div><div class="kpi-val">26.6%</div><div class="kpi-sub">6,658 patients still active</div><div class="kpi-badge br">73.4% dropout rate</div></div>
+</div>
+
+<div class="sec">Problem 1 — revenue fluctuation and HMO reimbursement cut</div>
+<div class="row2">
+  <div class="card">
+    <div class="card-title">Monthly Revenue vs Patient Volume</div>
+    <div class="card-sub">Revenue grew steadily until January 2024 when HMO coverage was cut from 72% to 55% — reducing what the hospital collects from insured patients</div>
+    <div style="position:relative;height:260px"><canvas id="revChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">HMO Coverage Impact</div>
+    <div class="card-sub">Before vs after January 2024 reimbursement cut</div>
+    <br>
+    <div class="finding fg"><strong>Pre-Jan 2024:</strong> HMO covered 72% of gross bill. Average collected per HMO visit: ₦18,270. Total HMO revenue: ₦133.9M from 7,329 bills.</div>
+    <div class="finding fr"><strong>Post-Jan 2024:</strong> HMO cut to 55% coverage. Revenue per visit unchanged (₦18,701) but hospital now carries 45% of cost vs 28% before. Estimated shortfall: ₦28.6M+ from this change alone.</div>
+    <div class="finding fa"><strong>Revenue by payment type:</strong> HMO/Insurance is the largest segment (₦320.9M, 39.5% of revenue). A 17-point coverage cut here has an outsized impact on hospital finances.</div>
+    <div class="finding fg"><strong>Action:</strong> Renegotiate HMO contracts immediately — target 65%+ coverage. Diversify toward Corporate and direct pay to reduce HMO dependency.</div>
+  </div>
+</div>
+
+<div class="sec">Problem 2 — no-show rates by department</div>
+<div class="row-half">
+  <div class="card">
+    <div class="card-title">No-Show Rate by Department</div>
+    <div class="card-sub">Mental Health (44.7%) and Dental (43.4%) are critical. Maternity's rate nearly doubled after January 2024 staff shortage.</div>
+    <div style="position:relative;height:280px"><canvas id="noshowChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Department Performance Table</div>
+    <div class="card-sub">No-show rate, average wait time, and patient satisfaction for each department</div>
+    <table class="tbl">
+      <thead><tr><th>Department</th><th>No-Show %</th><th>Avg Wait</th><th>Satisfaction</th></tr></thead>
+      <tbody id="deptTable"></tbody>
+    </table>
+    <br>
+    <div class="finding fr"><strong>Maternity Crisis:</strong> Wait time doubled from 37.7 to 84.3 minutes after Jan 2024 staff shortage. No-show rate jumped from 16.1% to 30.1%. Satisfaction crashed from 4.1 to 2.7/5. Estimated lost revenue from Maternity no-shows: ₦71.7M.</div>
+  </div>
+</div>
+
+<div class="sec">Problem 3 — patient dropout risk</div>
+<div class="row-half">
+  <div class="card">
+    <div class="card-title">Dropout Rate by Payment Type</div>
+    <div class="card-sub">Out-of-Pocket patients are the most price-sensitive and have the highest dropout rate. HMO patients stay longest.</div>
+    <div style="position:relative;height:260px"><canvas id="dropoutChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Dropout Risk by Channel</div>
+    <div class="card-sub">Doctor Referral patients are the most loyal — 32.3% still active after 12 months. Social Media patients drop out fastest.</div>
+    <table class="tbl">
+      <thead><tr><th>Channel</th><th>Patients</th><th>Active Rate</th><th>Avg Visits</th><th>Risk Score</th></tr></thead>
+      <tbody id="channelTable"></tbody>
+    </table>
+    <br>
+    <div class="finding fr"><strong>High risk patients:</strong> Patients in Mental Health and Dental with Out-of-Pocket payment have the highest combined dropout risk. These patients need proactive outreach before they disengage.</div>
+  </div>
+</div>
+
+<div class="sec">Problem 4 — channel quality and patient loyalty</div>
+<div class="row-half">
+  <div class="card">
+    <div class="card-title">Revenue by Registration Channel</div>
+    <div class="card-sub">Doctor Referral generates the most revenue and the most loyal patients. Social Media brings volume but poor retention.</div>
+    <div style="position:relative;height:240px"><canvas id="channelRevChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Revenue by Department</div>
+    <div class="card-sub">Cardiology is the highest revenue department at ₦279M. General Practice sees the most patients but lowest revenue per visit.</div>
+    <div style="position:relative;height:240px"><canvas id="deptRevChart"></canvas></div>
+  </div>
+</div>
+
+<div class="sec">Problem 5 — wait times and patient satisfaction</div>
+<div class="row-half">
+  <div class="card">
+    <div class="card-title">Wait Time vs Satisfaction Correlation</div>
+    <div class="card-sub">Strong negative correlation (r = -0.91) — every minute of extra wait costs patient satisfaction. Maternity is the critical outlier.</div>
+    <div style="position:relative;height:260px"><canvas id="waitChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Maternity Department: Before vs After Staff Shortage</div>
+    <div class="card-sub">January 2024 staff shortage had a measurable, quantifiable impact on patient experience</div>
+    <div style="position:relative;height:240px"><canvas id="maternityChart"></canvas></div>
+  </div>
+</div>
+
+<div class="sec">Key findings and recommended actions</div>
+<div class="rec-grid">
+  <div class="rec"><div class="rec-num">Finding 01</div><div class="rec-title">HMO reimbursement cut is costing ₦28.6M+</div><div class="rec-body">The January 2024 HMO coverage reduction from 72% to 55% created a significant revenue gap. HMO patients represent 39.5% of all billing — any coverage change has an outsized effect on total revenue.</div><div class="rec-action">Renegotiate all HMO contracts before next renewal. Target 65% minimum coverage. Reduce HMO dependency by growing Corporate and direct-pay segments.</div></div>
+  <div class="rec"><div class="rec-num">Finding 02</div><div class="rec-title">Mental Health and Dental no-shows destroy capacity</div><div class="rec-body">44.7% of Mental Health appointments and 43.4% of Dental appointments are no-shows. Each missed slot is capacity and revenue wasted. With 2,148 Mental Health and Dental no-shows combined, estimated lost revenue exceeds ₦19M.</div><div class="rec-action">Implement mandatory appointment deposits for Mental Health and Dental. Add WhatsApp reminders 48h and 2h before every appointment. Consider telehealth for Mental Health follow-ups.</div></div>
+  <div class="rec"><div class="rec-num">Finding 03</div><div class="rec-title">Maternity staff shortage is a patient experience emergency</div><div class="rec-body">Wait times doubled from 37.7 to 84.3 minutes. Satisfaction crashed from 4.1 to 2.7. No-show rate nearly doubled to 30.1%. With 6,898 completed Maternity bills at an average of ₦28,610, this department's dysfunction is a major financial risk.</div><div class="rec-action">Hire minimum 2 additional Maternity staff this quarter. Set a 50-minute wait time target with a dashboard for daily monitoring. Offer affected patients a follow-up discount as a goodwill gesture.</div></div>
+  <div class="rec"><div class="rec-num">Finding 04</div><div class="rec-title">Doctor Referral patients are the highest quality patients</div><div class="rec-body">Doctor Referral patients have a 32.3% active rate — 47% higher than Walk-in patients. They also average more visits per year. Yet only 28% of patient registrations come through this channel, suggesting an untapped growth lever.</div><div class="rec-action">Launch a formal GP Partnership Programme — host quarterly referral dinners, provide GPs with patient outcome reports, offer co-branded health packages. Target 40% of registrations from referrals within 12 months.</div></div>
+  <div class="rec"><div class="rec-num">Finding 05</div><div class="rec-title">Out-of-Pocket patients need payment plan options</div><div class="rec-body">Out-of-Pocket patients represent 35% of billings but have the highest dropout rate. Price sensitivity is the primary reason patients miss follow-up appointments and disengage from care — not satisfaction with the service.</div><div class="rec-action">Introduce 3-month and 6-month payment plans for Out-of-Pocket patients on treatment programmes. Partner with 1-2 microfinance banks to offer patient financing. This directly addresses the price barrier without reducing revenue.</div></div>
+  <div class="rec"><div class="rec-num">Finding 06</div><div class="rec-title">Cardiology and Maternity drive the most revenue per visit</div><div class="rec-body">Cardiology averages ₦40,182 per bill — 8.9x the General Practice average. Maternity averages ₦28,610. These two departments generate ₦476M — 59.8% of total hospital revenue — from just 25% of appointments.</div><div class="rec-action">Protect and prioritise Cardiology and Maternity capacity above all other departments. Any staffing or equipment investment here has the highest revenue return. Do not cut these budgets.</div></div>
+</div>
+
+</div>
+<footer>
+  <div class="ft2">MediTrack Nigeria — Hospital Analytics Dashboard — 2023/2024</div>
+  <div class="ft2">25,000 patients | 62,135 appointments | ₦796.3M revenue | Built with Python and Chart.js</div>
+</footer>
+
+<script>
+const months=['Jul 23','Aug 23','Sep 23','Oct 23','Nov 23','Dec 23','Jan 24','Feb 24','Mar 24','Apr 24','May 24','Jun 24'];
+const rev=[25.2,53.1,61.7,68.6,70.5,76.7,75.1,70.6,77.3,78.3,80.7,58.5];
+const patients_m=[1019,2154,2415,2656,2787,2956,2935,2807,2991,3010,3099,2445];
+const teal='#0d7c72',blue='#1d3a8a',red='#b81c1c',amber='#b86010',green='#166a3c',purple='#5a2888',gray='#8a9ab8';
+const def={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
+
+// Revenue chart
+new Chart(document.getElementById('revChart'),{
+  type:'bar',
+  data:{labels:months,datasets:[
+    {label:'Revenue ₦M',data:rev,backgroundColor:rev.map((v,i)=>i>=6?'rgba(184,28,28,0.55)':'rgba(13,124,114,0.55)'),borderColor:rev.map((v,i)=>i>=6?red:teal),borderWidth:1.5,borderRadius:5,yAxisID:'y'},
+    {type:'line',label:'Patients',data:patients_m,borderColor:amber,backgroundColor:'transparent',pointBackgroundColor:amber,pointRadius:3,borderWidth:2,yAxisID:'y2',tension:0.4}
+  ]},
+  options:{...def,plugins:{legend:{display:true,labels:{color:'#4a5a7a',font:{size:11},boxWidth:12,padding:12}}},scales:{
+    y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:gray,font:{size:11},callback:v=>'₦'+v+'M'},border:{display:false}},
+    y2:{position:'right',grid:{display:false},ticks:{color:amber,font:{size:11}},border:{display:false}},
+    x:{grid:{display:false},ticks:{color:gray,font:{size:11}},border:{display:false}}
+  }}
+});
+
+// No-show chart
+const depts=['Mental Health','Dental','Maternity','Emergency','Cardiology','Paediatrics','Ophthalmology','Gen Practice','Dermatology','Orthopaedics'];
+const noshow=[44.7,43.4,24.2,17.8,16.4,16.3,16.2,16.1,15.6,15.2];
+const nsColors=noshow.map(v=>v>35?'rgba(184,28,28,0.7)':v>20?'rgba(184,96,16,0.7)':'rgba(22,106,60,0.7)');
+const nsBorder=noshow.map(v=>v>35?red:v>20?amber:green);
+new Chart(document.getElementById('noshowChart'),{
+  type:'bar',
+  data:{labels:depts,datasets:[{data:noshow,backgroundColor:nsColors,borderColor:nsBorder,borderWidth:1.5,borderRadius:5}]},
+  options:{...def,indexAxis:'y',scales:{
+    x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:gray,font:{size:11},callback:v=>v+'%'},border:{display:false},min:0,max:55},
+    y:{grid:{display:false},ticks:{color:'#4a5a7a',font:{size:11}},border:{display:false}}
+  }}
+});
+
+// Dept table
+const deptData=[
+  {dept:'Mental Health',noshow:44.7,wait:37.3,sat:4.1,cls:'p-red'},
+  {dept:'Dental',noshow:43.4,wait:37.5,sat:4.1,cls:'p-red'},
+  {dept:'Maternity',noshow:24.2,wait:64.7,sat:3.3,cls:'p-amber'},
+  {dept:'Emergency',noshow:17.8,wait:44.5,sat:3.8,cls:'p-amber'},
+  {dept:'Cardiology',noshow:16.4,wait:37.8,sat:4.1,cls:'p-green'},
+  {dept:'General Practice',noshow:16.1,wait:37.4,sat:4.1,cls:'p-green'},
+  {dept:'Orthopaedics',noshow:15.2,wait:38.1,sat:4.1,cls:'p-green'},
+];
+const dt=document.getElementById('deptTable');
+deptData.forEach(r=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><span class="pill ${r.cls}">${r.dept}</span></td><td style="color:${r.noshow>30?red:r.noshow>20?amber:green};font-weight:500">${r.noshow}%</td><td style="color:${r.wait>60?red:r.wait>45?amber:'inherit'};font-weight:${r.wait>60?500:400}">${r.wait} min</td><td>${'⭐'.repeat(Math.round(r.sat))} ${r.sat}</td>`;
+  dt.appendChild(tr);
+});
+
+// Dropout chart
+const payTypes=['HMO/Insurance','Corporate','NHIS','NGO/Donor','Out-of-Pocket'];
+const dropoutRates=[68.5,71.2,72.1,73.8,78.9];
+const activeRates=dropoutRates.map(v=>100-v);
+new Chart(document.getElementById('dropoutChart'),{
+  type:'bar',
+  data:{labels:payTypes,datasets:[
+    {label:'Active (%)',data:activeRates,backgroundColor:activeRates.map(v=>v>28?'rgba(22,106,60,0.6)':'rgba(184,96,16,0.6)'),borderColor:activeRates.map(v=>v>28?green:amber),borderWidth:1.5,borderRadius:5},
+    {label:'Dropout (%)',data:dropoutRates,backgroundColor:'rgba(184,28,28,0.35)',borderColor:red,borderWidth:1.5,borderRadius:5}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#4a5a7a',font:{size:11},boxWidth:12,padding:10}}},scales:{
+    y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:gray,font:{size:11},callback:v=>v+'%'},border:{display:false},stacked:false},
+    x:{grid:{display:false},ticks:{color:'#4a5a7a',font:{size:10},maxRotation:20},border:{display:false}}
+  }}
+});
+
+// Channel table
+const chData=[
+  {ch:'Doctor Referral',patients:7012,active:32.3,visits:2.0,risk:77.0,cls:'p-green'},
+  {ch:'Insurance Partner',patients:3495,active:30.4,visits:1.8,risk:78.8,cls:'p-teal'},
+  {ch:'NGO Partner',patients:1499,active:29.3,visits:1.7,risk:80.0,cls:'p-blue'},
+  {ch:'Walk-in',patients:6025,active:22.5,visits:1.2,risk:86.5,cls:'p-amber'},
+  {ch:'Online Search',patients:4395,active:21.9,visits:1.2,risk:87.8,cls:'p-red'},
+  {ch:'Social Media',patients:2574,active:22.3,visits:1.1,risk:88.1,cls:'p-red'},
+];
+const ct=document.getElementById('channelTable');
+chData.forEach(r=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><span class="pill ${r.cls}">${r.ch}</span></td><td>${r.patients.toLocaleString()}</td><td style="color:${r.active>28?green:r.active>25?amber:red};font-weight:500">${r.active}%</td><td>${r.visits}</td><td style="color:${r.risk>85?red:r.risk>80?amber:green}">${r.risk}</td>`;
+  ct.appendChild(tr);
+});
+
+// Channel revenue chart
+const chRevLabels=['Doctor Referral','Walk-in','Online Search','Insurance Partner','Social Media','NGO Partner'];
+const chRevVals=[298.4,187.3,142.6,98.5,42.8,26.7];
+const chRevColors=[green,teal,blue,purple,amber,gray];
+new Chart(document.getElementById('channelRevChart'),{
+  type:'bar',
+  data:{labels:chRevLabels,datasets:[{data:chRevVals,backgroundColor:chRevColors.map(c=>c+'55'),borderColor:chRevColors,borderWidth:1.5,borderRadius:5}]},
+  options:{...def,scales:{
+    y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:gray,font:{size:11},callback:v=>'₦'+v+'M'},border:{display:false}},
+    x:{grid:{display:false},ticks:{color:'#4a5a7a',font:{size:10},maxRotation:20},border:{display:false}}
+  }}
+});
+
+// Dept revenue chart
+new Chart(document.getElementById('deptRevChart'),{
+  type:'doughnut',
+  data:{
+    labels:['Cardiology','Maternity','Orthopaedics','Gen Practice','Paediatrics','Other'],
+    datasets:[{
+      data:[279.0,197.4,104.2,59.5,34.3,121.9],
+      backgroundColor:[teal,blue,purple,green,amber,gray].map(c=>c+'bb'),
+      borderColor:'#fff',borderWidth:2
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#4a5a7a',font:{size:11},boxWidth:12,padding:8}}}}
+});
+
+// Wait time chart
+const waitDepts=['General Practice','Cardiology','Dental','Mental Health','Paediatrics','Orthopaedics','Dermatology','Ophthalmology','Emergency','Maternity'];
+const waitTimes=[37.4,37.8,37.5,37.3,37.6,38.1,38.1,37.5,44.5,64.7];
+const waitSat=[4.1,4.1,4.1,4.1,4.1,4.1,4.1,4.1,3.8,3.3];
+const waitColors=waitDepts.map(d=>d==='Maternity'?red:d==='Emergency'?amber:teal);
+new Chart(document.getElementById('waitChart'),{
+  type:'scatter',
+  data:{datasets:[{data:waitDepts.map((d,i)=>({x:waitTimes[i],y:waitSat[i],dept:d})),backgroundColor:waitColors.map(c=>c+'aa'),borderColor:waitColors,pointRadius:10,pointHoverRadius:12}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{
+    legend:{display:false},
+    tooltip:{callbacks:{label:ctx=>`${ctx.raw.dept}: ${ctx.raw.x} min wait | ${ctx.raw.y}/5 satisfaction`}}
+  },scales:{
+    x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:gray,font:{size:11},callback:v=>v+' min'},border:{display:false},title:{display:true,text:'Average Wait Time (minutes)',color:'#4a5a7a',font:{size:11}}},
+    y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:gray,font:{size:11}},border:{display:false},title:{display:true,text:'Avg Satisfaction (1-5)',color:'#4a5a7a',font:{size:11}},min:2.5,max:4.5}
+  }}
+});
+
+// Maternity before/after
+new Chart(document.getElementById('maternityChart'),{
+  type:'bar',
+  data:{labels:['Pre-Jan 2024','Post-Jan 2024 (Understaffed)'],datasets:[
+    {label:'Avg Wait (min)',data:[37.7,84.3],backgroundColor:['rgba(22,106,60,0.6)','rgba(184,28,28,0.6)'],borderColor:[green,red],borderWidth:1.5,borderRadius:5},
+    {label:'No-Show Rate (%)',data:[16.1,30.1],backgroundColor:['rgba(13,124,114,0.5)','rgba(184,96,16,0.6)'],borderColor:[teal,amber],borderWidth:1.5,borderRadius:5}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#4a5a7a',font:{size:11},boxWidth:12}}},scales:{
+    y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:gray,font:{size:11}},border:{display:false}},
+    x:{grid:{display:false},ticks:{color:'#4a5a7a',font:{size:11}},border:{display:false}}
+  }}
+});
+</script>
+</body>
+</html>
